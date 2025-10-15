@@ -189,7 +189,7 @@
             }
 
             try {
-                const res = await fetch("https://trabalho-extensao.vercel.app", {
+                const res = await fetch("/remover-fundo", { // <-- Mude para um caminho relativo", {
                     method: "POST",
                     body: formData
                 });
@@ -245,4 +245,5 @@
     </script>
 </body>
 </html>
+
 
