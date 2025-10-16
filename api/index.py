@@ -1,66 +1,76 @@
-# NOVO ARQUIVO: api/index.py (versão Cloudinary)
-
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import cloudinary
 import cloudinary.uploader
-import os
-import base64
+import cloudinary.utils
 
+# 1. Configuração da Aplicação
 app = Flask(__name__)
 CORS(app)
 
-# Configurações do Cloudinary (Obtenha estes valores do seu Dashboard)
-# É altamente recomendável usar VARIÁVEIS DE AMBIENTE no Vercel para armazenar estas chaves!
-cloudinary.config( 
-  cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME"), 
-  api_key = os.environ.get("CLOUDINARY_API_KEY"), 
-  api_secret = os.environ.get("CLOUDINARY_API_SECRET"),
-  secure = True
-)
+# Obtendo variáveis de ambiente (Credenciais de acesso ao Cloudinary)
+CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME")
+API_KEY = os.environ.get("CLOUDINARY_API_KEY")
+API_SECRET = os.environ.get("CLOUDINARY_API_SECRET")
 
-# Endpoint da API para remover fundo
+# Configuração do Cloudinary
+if CLOUD_NAME and API_KEY and API_SECRET:
+    cloudinary.config( 
+      cloud_name = CLOUD_NAME, 
+      api_key = API_KEY, 
+      api_secret = API_SECRET,
+      secure = True
+    )
+else:
+    # Se as chaves não estiverem no Vercel, o código falha aqui
+    print("ERRO CRÍTICO: Credenciais do Cloudinary ausentes nas Variáveis de Ambiente!")
+
+
 @app.route("/remover-fundo", methods=["POST"])
 def remover_fundo():
+    # Primeira verificação: Garantir que as credenciais foram carregadas
+    if not CLOUD_NAME or not API_KEY or not API_SECRET:
+        return jsonify({"erro": "Configuração do Cloudinary ausente. Verifique as Variáveis de Ambiente no Vercel."}), 500
+
     try:
         arquivos = request.files.getlist("imagens")
-        resultados = []
+        urls_processadas = []
 
         if not arquivos:
             return jsonify({"erro": "Nenhuma imagem enviada"}), 400
 
         for arquivo in arquivos:
-            # 1. Faz o upload da imagem original para o Cloudinary
-            upload_result = cloudinary.uploader.upload(arquivo, folder="background-removal-temp")
+            # 2. FAZ O UPLOAD do arquivo diretamente para o Cloudinary
+            # Usando 'resource_type="auto"' para suportar múltiplos formatos
+            upload_result = cloudinary.uploader.upload(
+                arquivo, 
+                folder="background-removal-temp",
+                resource_type="auto"
+            )
             
+            # 3. VERIFICAÇÃO DE SUCESSO DO UPLOAD
+            if 'public_id' not in upload_result:
+                 # Esta exceção aparecerá nos logs do Vercel
+                 raise Exception(f"Upload para o Cloudinary falhou. Resposta: {upload_result}")
+
             original_public_id = upload_result['public_id']
             
-            # 2. Gera a URL da imagem com a transformação de remoção de fundo
-            # Atenção: 'e_background_removal' é o Add-on. Pode ter custos/limites.
-            # Verifique as instruções do Cloudinary sobre como habilitar e usar.
+            # 4. GERA A URL DA IMAGEM COM A TRANSFORMAÇÃO
+            # e_background_removal - Remove o fundo (exige o Add-on ativo)
+            # f_auto, q_auto - Otimização de formato e qualidade
             transformed_url = cloudinary.utils.cloudinary_url(
                 original_public_id,
                 fetch_format="png", # PNG para manter a transparência
-                effect="e_background_removal" # Comando de remoção de fundo
+                effect="e_background_removal", 
+                quality="auto" 
             )[0]
             
-            # O Cloudinary retorna a URL. Agora precisamos converter para Base64 para manter a compatibilidade com o frontend
-            # O código original espera Base64. É mais eficiente retornar a URL, mas manteremos o Base64 para o seu frontend.
-            
-            # Para manter o frontend simples, vamos carregar a imagem da URL e transformá-la em base64.
-            # Isto é menos eficiente do que apenas retornar a URL transformada!
-            import requests
-            response = requests.get(transformed_url)
-            
-            if response.status_code == 200:
-                img_base64 = base64.b64encode(response.content).decode("utf-8")
-                resultados.append(f"data:image/png;base64,{img_base64}")
-            else:
-                raise Exception(f"Erro ao obter imagem processada do Cloudinary: {response.status_code}")
+            urls_processadas.append(transformed_url)
 
-        # Opcional: Limpar as imagens temporárias do Cloudinary para economizar espaço
-        # Não faremos aqui para manter a simplicidade.
-
-        return jsonify({"imagens": resultados})
+        # 5. RETORNA UMA LISTA DE URLS (e não Base64)
+        return jsonify({"imagens": urls_processadas})
+        
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+        # Retorna o erro capturado para o cliente e logs
+        return jsonify({"erro": f"Erro no processamento: {str(e)}"}), 500
