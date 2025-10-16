@@ -1,4 +1,3 @@
-Flask==3.0.3  # ou a versão que preferir
-flask-cors==4.0.1 # ou a versão que preferir
-rembg[cpu]==2.0.51 # Versão estável do rembg. Usar [cpu] é crucial.
-Pillow==10.3.0 # ou a versão que preferir
+Flask==3.0.3
+flask-cors==4.0.1
+cloudinary==1.38.0  # Nova dependência para interagir com o Cloudinary
