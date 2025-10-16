@@ -120,4 +120,170 @@
         <input type="file" id="fileInput" multiple onchange="mostrarPreview()">
     </label>
 
-    <div id="previewContainer" style="display
+    <div id="previewContainer" style="display:none;"></div>
+
+    <br>
+    <button onclick="enviar()">PROCESSAR</button>
+    <button id="baixarTodasBtn" style="display:none;" onclick="baixarTodas()">⬇ Baixar Todas</button>
+    <button onclick="limparImagens()">🗑 LIMPAR IMAGENS</button>
+
+    <h2 style="color:#ff9800;"></h2>
+    <div id="resultado"></div>
+
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script>
+        let imagensProcessadas = [];
+
+        function mostrarPreview() {
+            const previewDiv = document.getElementById("previewContainer");
+            previewDiv.innerHTML = "";
+            const files = document.getElementById("fileInput").files;
+
+            if (files.length > 0) {
+                document.getElementById("fileLabel").style.display = "none";
+                previewDiv.style.display = "flex";
+            }
+
+            for (const file of files) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+                    img.classList.add("preview-img");
+                    previewDiv.appendChild(img);
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function limparImagens() {
+            document.getElementById("fileInput").value = "";
+            document.getElementById("previewContainer").innerHTML = "";
+            document.getElementById("resultado").innerHTML = "";
+            imagensProcessadas = [];
+            document.getElementById("baixarTodasBtn").style.display = "none";
+            document.getElementById("fileLabel").style.display = "inline-block";
+            document.getElementById("previewContainer").style.display = "none";
+        }
+
+        async function enviar() {
+            const files = document.getElementById("fileInput").files;
+            if (files.length === 0) {
+                alert("Selecione pelo menos uma imagem.");
+                return;
+            }
+
+            document.getElementById("loader").style.display = "flex";
+
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append("imagens", file);
+            }
+
+            try {
+                // CORREÇÃO: Usando caminho relativo para o Vercel
+                const res = await fetch("/remover-fundo", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.erro || "Erro desconhecido ao processar imagens");
+                }
+
+                const data = await res.json();
+                
+                // CORREÇÃO: data.imagens agora contém URLs
+                imagensProcessadas = data.imagens;
+                document.getElementById("baixarTodasBtn").style.display = "inline-block";
+
+                const div = document.getElementById("resultado");
+                div.innerHTML = "";
+
+                data.imagens.forEach((imgUrl, index) => { // Usando imgUrl
+                    const card = document.createElement("div");
+                    card.classList.add("card");
+
+                    const img = document.createElement("img");
+                    img.src = imgUrl; // Usando a URL diretamente
+
+                    const link = document.createElement("a");
+                    link.href = imgUrl; // O link de download é a própria URL
+                    link.download = `imagem_processada_${index + 1}.png`; // PNG mantém a transparência
+                    link.textContent = "⬇ Baixar";
+                    link.classList.add("download-btn");
+
+                    card.appendChild(img);
+                    card.appendChild(link);
+                    div.appendChild(card);
+                });
+
+            } catch (err) {
+                console.error(err);
+                alert(`Ocorreu um erro: ${err.message}. Verifique os logs do Vercel para detalhes.`);
+            } finally {
+                document.getElementById("loader").style.display = "none";
+            }
+        }
+
+        // CÓDIGO FINAL E CORRIGIDO para a função baixarTodas()
+
+        function baixarTodas() {
+            if (imagensProcessadas.length === 0) return;
+
+            const zip = new JSZip();
+            const promises = [];
+
+            document.getElementById("loader").style.display = "flex"; 
+
+            imagensProcessadas.forEach((imgUrl, index) => {
+                
+                const promise = fetch(imgUrl)
+                    .then(res => {
+                        // VERIFICAÇÃO CRÍTICA: Garante que a resposta HTTP foi bem-sucedida (200-299)
+                        if (!res.ok) {
+                            throw new Error(`Falha no download da imagem ${index + 1}. Status: ${res.status}`);
+                        }
+                        return res.blob();
+                    })
+                    .then(blob => {
+                        // Adiciona o Blob (dados binários da imagem) ao arquivo ZIP
+                        zip.file(`imagem_processada_${index + 1}.png`, blob);
+                    })
+                    .catch(error => {
+                        console.error(`Falha ao baixar ${imgUrl}:`, error);
+                        // Adiciona um arquivo de texto ao zip em caso de falha (para não corromper o zip)
+                        zip.file(`erro_${index + 1}.txt`, `${error.message}. URL: ${imgUrl}`);
+                    });
+                
+                promises.push(promise);
+            });
+
+            // Espera que todos os downloads terminem
+            Promise.all(promises)
+                .then(() => {
+                    // Gera o arquivo ZIP
+                    return zip.generateAsync({ type: "blob" });
+                })
+                .then(content => {
+                    // Salva o arquivo ZIP
+                    saveAs(content, "imagens_processadas.zip");
+                })
+                .catch(error => {
+                    console.error("Erro ao gerar ou salvar o ZIP:", error);
+                    alert("Ocorreu um erro ao compactar as imagens. Tente novamente.");
+                })
+                .finally(() => {
+                    document.getElementById("loader").style.display = "none"; 
+                });
+        }
+    </script>
+</body>
+</html>
