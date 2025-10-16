@@ -115,13 +115,11 @@
     <h1>REMOVEDOR DE FUNDO <br> PARANA PEÇAS</h1>
   
 
-    <!-- Botão de seleção de imagens -->
     <label id="fileLabel" class="custom-file">
         INICIAR COM IMAGENS
         <input type="file" id="fileInput" multiple onchange="mostrarPreview()">
     </label>
 
-    <!-- Container que vai aparecer no lugar do botão -->
     <div id="previewContainer" style="display:none;"></div>
 
     <br>
@@ -189,7 +187,8 @@
             }
 
             try {
-                const res = await fetch("/Trabalho_Extensao", { 
+                // ALTERAÇÃO AQUI: Mudando para caminho relativo "/remover-fundo"
+                const res = await fetch("/remover-fundo", {
                     method: "POST",
                     body: formData
                 });
@@ -198,53 +197,4 @@
 
                 const data = await res.json();
                 imagensProcessadas = data.imagens;
-                document.getElementById("baixarTodasBtn").style.display = "inline-block";
-
-                const div = document.getElementById("resultado");
-                div.innerHTML = "";
-
-                data.imagens.forEach((imgBase64, index) => {
-                    const card = document.createElement("div");
-                    card.classList.add("card");
-
-                    const img = document.createElement("img");
-                    img.src = imgBase64;
-
-                    const link = document.createElement("a");
-                    link.href = imgBase64;
-                    link.download = `imagem_processada_${index + 1}.jpg`;
-                    link.textContent = "⬇ Baixar";
-                    link.classList.add("download-btn");
-
-                    card.appendChild(img);
-                    card.appendChild(link);
-                    div.appendChild(card);
-                });
-
-            } catch (err) {
-                console.error(err);
-                alert("Ocorreu um erro ao enviar as imagens.");
-            } finally {
-                document.getElementById("loader").style.display = "none";
-            }
-        }
-
-        function baixarTodas() {
-            if (imagensProcessadas.length === 0) return;
-
-            const zip = new JSZip();
-            imagensProcessadas.forEach((imgBase64, index) => {
-                const base64Data = imgBase64.split(',')[1];
-                zip.file(`imagem_processada_${index + 1}.jpg`, base64Data, { base64: true });
-            });
-
-            zip.generateAsync({ type: "blob" }).then(content => {
-                saveAs(content, "imagens_processadas.zip");
-            });
-        }
-    </script>
-</body>
-</html>
-
-
-
+                document.getElementById("baixarTodasBtn
