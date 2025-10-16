@@ -42,7 +42,6 @@ def remover_fundo():
 
         for arquivo in arquivos:
             # 2. FAZ O UPLOAD do arquivo diretamente para o Cloudinary
-            # Usando 'resource_type="auto"' para suportar múltiplos formatos
             upload_result = cloudinary.uploader.upload(
                 arquivo, 
                 folder="background-removal-temp",
@@ -51,24 +50,23 @@ def remover_fundo():
             
             # 3. VERIFICAÇÃO DE SUCESSO DO UPLOAD
             if 'public_id' not in upload_result:
-                 # Esta exceção aparecerá nos logs do Vercel
+                 # Imprime o erro completo nos logs do Vercel
                  raise Exception(f"Upload para o Cloudinary falhou. Resposta: {upload_result}")
 
             original_public_id = upload_result['public_id']
             
             # 4. GERA A URL DA IMAGEM COM A TRANSFORMAÇÃO
-            # e_background_removal - Remove o fundo (exige o Add-on ativo)
-            # f_auto, q_auto - Otimização de formato e qualidade
+            # CORREÇÃO CRÍTICA: Adicionando flags="attachment" para estabilizar o download via JavaScript
             transformed_url = cloudinary.utils.cloudinary_url(
                 original_public_id,
                 fetch_format="png", # PNG para manter a transparência
                 effect="e_background_removal", 
-                quality="auto" 
+                flags="attachment"  # ESTA É A CORREÇÃO PRINCIPAL
             )[0]
             
             urls_processadas.append(transformed_url)
 
-        # 5. RETORNA UMA LISTA DE URLS (e não Base64)
+        # 5. RETORNA UMA LISTA DE URLS
         return jsonify({"imagens": urls_processadas})
         
     except Exception as e:
