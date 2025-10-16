@@ -55,14 +55,16 @@ def remover_fundo():
 
             original_public_id = upload_result['public_id']
             
-            # 4. GERA A URL DA IMAGEM COM A TRANSFORMAÇÃO
-            # CORREÇÃO CRÍTICA: Adicionando flags="attachment" para estabilizar o download via JavaScript
+
+
             transformed_url = cloudinary.utils.cloudinary_url(
                 original_public_id,
-                fetch_format="png", # PNG para manter a transparência
-                effect="e_background_removal", 
-                flags="attachment"  # ESTA É A CORREÇÃO PRINCIPAL
+                fetch_format="png", 
+                # CORREÇÃO CRÍTICA AQUI: O valor correto é APENAS "background_removal"
+                effect="background_removal", 
+                flags="attachment"  
             )[0]
+            
             
             urls_processadas.append(transformed_url)
 
