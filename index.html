@@ -186,7 +186,7 @@
                 formData.append("imagens", file);
             }
 
-            try {
+try {
                 // ALTERAÇÃO AQUI: Mudando para caminho relativo "/remover-fundo"
                 const res = await fetch("/remover-fundo", {
                     method: "POST",
@@ -196,5 +196,32 @@
                 if (!res.ok) throw new Error("Erro ao processar imagens");
 
                 const data = await res.json();
-                imagensProcessadas = data.imagens;
-                document.getElementById("baixarTodasBtn
+                
+                // *** MUDANÇA IMPORTANTE AQUI: data.imagens agora contém URLs, não Base64 ***
+                imagensProcessadas = data.imagens; // Agora armazena URLs
+                document.getElementById("baixarTodasBtn").style.display = "inline-block";
+
+                const div = document.getElementById("resultado");
+                div.innerHTML = "";
+
+                data.imagens.forEach((imgUrl, index) => { // Renomeado para imgUrl
+                    const card = document.createElement("div");
+                    card.classList.add("card");
+
+                    const img = document.createElement("img");
+                    img.src = imgUrl; // Usando a URL diretamente
+
+                    const link = document.createElement("a");
+                    link.href = imgUrl; // O link de download é a própria URL
+                    link.download = `imagem_processada_${index + 1}.png`; // Mudei para .png (transparência)
+                    link.textContent = "⬇ Baixar";
+                    link.classList.add("download-btn");
+
+                    card.appendChild(img);
+                    card.appendChild(link);
+                    div.appendChild(card);
+                });
+
+            } catch (err) {
+                // ... (código posterior)
+
