@@ -1,295 +1,60 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Remover Fundo</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #2b2a2a;
-            color: #f5f5f5;
-            text-align: center;
-            padding: 20px;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paraná Peças Toledo - Removedor de Fundo</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a; /* Fundo mais escuro */
+            color: #f5f5f5;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #ff9800; /* Laranja */
+            font-size: 36px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        .subtitle {
+            color: #ccc;
+            font-size: 18px;
+            margin-top: 5px;
+            margin-bottom: 30px;
         }
-        h1 {
-            color: #ff9800;
-            font-size: larger;
-            width:auto;
-        }
-        .custom-file {
-            display: inline-block;
-            padding: 60px 50px;
-            background-color: #2c2c2c;
-            border: 2px solid #ff9800;
-            border-radius: 6px;
-            color: #ff9800;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .custom-file:hover {
-            background-color: #ff9800;
-            color: #1e1e1e;
-            
-        }
-        .custom-file input {
-            display: none;
-        }
-        button {
-            background-color: #ff9800;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            color: #1e1e1e;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:hover {
-            background-color: #e68900;
-        }
-        #resultado, #previewContainer {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 30px;
-            gap: 20px;
-        }
-        .card {
-            background-color: #2c2c2c;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            max-width: 220px;
-            box-shadow: 0px 2px 6px rgba(0,0,0,0.3);
-        }
-        .card img {
-            max-width: 200px;
-            border-radius: 4px;
-            display: block;
-            margin-bottom: 10px;
-        }
-        .download-btn {
-            display: inline-block;
-            background-color: #ff9800;
-            color: #1e1e1e;
-            padding: 8px 12px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .download-btn:hover {
-            background-color: #e68900;
-        }
-        .preview-img {
-            max-width: 120px;
-            border-radius: 6px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.4);
-        }
-        #loader {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(30, 30, 30, 0.85);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-        }
-        .spinner {
-            border: 6px solid #2c2c2c;
-            border-top: 6px solid #ff9800;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-
-        }
-    </style>
-</head>
-<body>  
-    <img src="https://github.com/Crepalli/Trabalho_Extensao/blob/main/pictures/logo.png" width="60px">
-    <h1>REMOVEDOR DE FUNDO <br> LOS VIKINGS</h1>
-  
-
-    <label id="fileLabel" class="custom-file">
-        INICIAR COM IMAGENS
-        <input type="file" id="fileInput" multiple onchange="mostrarPreview()">
-    </label>
-
-    <div id="previewContainer" style="display:none;"></div>
-
-    <br>
-    <button onclick="enviar()">PROCESSAR</button>
-    <button id="baixarTodasBtn" style="display:none;" onclick="baixarTodas()">⬇ Baixar Todas</button>
-    <button onclick="limparImagens()">🗑 LIMPAR IMAGENS</button>
-
-    <h2 style="color:#ff9800;"></h2>
-    <div id="resultado"></div>
-
-    <div id="loader">
-        <div class="spinner"></div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-    <script>
-        let imagensProcessadas = [];
-
-        function mostrarPreview() {
-            const previewDiv = document.getElementById("previewContainer");
-            previewDiv.innerHTML = "";
-            const files = document.getElementById("fileInput").files;
-
-            if (files.length > 0) {
-                document.getElementById("fileLabel").style.display = "none";
-                previewDiv.style.display = "flex";
-            }
-
-            for (const file of files) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.createElement("img");
-                    img.src = e.target.result;
-                    img.classList.add("preview-img");
-                    previewDiv.appendChild(img);
-                }
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function limparImagens() {
-            document.getElementById("fileInput").value = "";
-            document.getElementById("previewContainer").innerHTML = "";
-            document.getElementById("resultado").innerHTML = "";
-            imagensProcessadas = [];
-            document.getElementById("baixarTodasBtn").style.display = "none";
-            document.getElementById("fileLabel").style.display = "inline-block";
-            document.getElementById("previewContainer").style.display = "none";
-        }
-
-        async function enviar() {
-            const files = document.getElementById("fileInput").files;
-            if (files.length === 0) {
-                alert("Selecione pelo menos uma imagem.");
-                return;
-            }
-
-            document.getElementById("loader").style.display = "flex";
-
-            const formData = new FormData();
-            for (const file of files) {
-                formData.append("imagens", file);
-            }
-
-            try {
-                
-                const res = await fetch("/remover-fundo", {
-                    method: "POST",
-                    body: formData
-                });
-
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(errorData.erro || "Erro desconhecido ao processar imagens");
-                }
-
-                const data = await res.json();
-                
-               
-                imagensProcessadas = data.imagens;
-                document.getElementById("baixarTodasBtn").style.display = "inline-block";
-
-                const div = document.getElementById("resultado");
-                div.innerHTML = "";
-
-                data.imagens.forEach((imgUrl, index) => { 
-                    const card = document.createElement("div");
-                    card.classList.add("card");
-
-                    const img = document.createElement("img");
-                    img.src = imgUrl; 
-
-                    const link = document.createElement("a");
-                    link.href = imgUrl; 
-                    link.download = `imagem_processada_${index + 1}.png`; 
-                    link.textContent = "⬇ Baixar";
-                    link.classList.add("download-btn");
-
-                    card.appendChild(img);
-                    card.appendChild(link);
-                    div.appendChild(card);
-                });
-
-            } catch (err) {
-                console.error(err);
-                alert(`Ocorreu um erro: ${err.message}. Verifique os logs do Vercel para detalhes.`);
-            } finally {
-                document.getElementById("loader").style.display = "none";
-            }
-        }
-
-        
-
-        function baixarTodas() {
-            if (imagensProcessadas.length === 0) return;
-
-            const zip = new JSZip();
-            const promises = [];
-
-            document.getElementById("loader").style.display = "flex"; 
-
-            imagensProcessadas.forEach((imgUrl, index) => {
-                
-                const promise = fetch(imgUrl)
-                    .then(res => {
-                        
-                        if (!res.ok) {
-                            throw new Error(`Falha no download da imagem ${index + 1}. Status: ${res.status}`);
-                        }
-                        return res.blob();
-                    })
-                    .then(blob => {
-                        
-                        zip.file(`imagem_processada_${index + 1}.png`, blob);
-                    })
-                    .catch(error => {
-                        console.error(`Falha ao baixar ${imgUrl}:`, error);
-                        
-                        zip.file(`erro_${index + 1}.txt`, `${error.message}. URL: ${imgUrl}`);
-                    });
-                
-                promises.push(promise);
-            });
-
-            
-            Promise.all(promises)
-                .then(() => {
-                   
-                    return zip.generateAsync({ type: "blob" });
-                })
-                .then(content => {
-                   
-                    saveAs(content, "imagens_processadas.zip");
-                })
-                .catch(error => {
-                    console.error("Erro ao gerar ou salvar o ZIP:", error);
-                    alert("Ocorreu um erro ao compactar as imagens. Tente novamente.");
-                })
-                .finally(() => {
-                    document.getElementById("loader").style.display = "none"; 
-                });
-        }
-    </script>
-</body>
-</html>
-
-
-
-
-
-
+        .custom-file {
+            display: inline-block;
+            padding: 60px 50px;
+            background-color: #181818; /* Card escuro */
+            border: 2px dashed #ff9800;
+            border-radius: 12px;
+            color: #ff9800;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .custom-file:hover {
+            background-color: #2c2c2c;
+            border-color: #e68900;
+        }
+        .custom-file input {
+            display: none;
+        }
+        button {
+            background-color: #ff9800;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            color: #1e1e1e;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #e68900;
+        }
+        #limparBtn {
+            background-color: #d32f2f
